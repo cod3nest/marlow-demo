@@ -7,6 +7,7 @@ describe("parseDuration", () => {
     expect(parseDuration("30s")).toBe(30_000);
     expect(parseDuration("5m")).toBe(300_000);
     expect(parseDuration("2h")).toBe(7_200_000);
+    expect(parseDuration("2d")).toBe(172_800_000);
   });
 
   test("rejects garbage", () => {
@@ -19,5 +20,7 @@ describe("formatDuration", () => {
     expect(formatDuration(250)).toBe("250ms");
     expect(formatDuration(30_000)).toBe("30s");
     expect(formatDuration(300_000)).toBe("5m");
+    expect(formatDuration(90_000_000)).toBe("1d");
+    expect(formatDuration(172_800_000)).toBe("2d");
   });
 });
