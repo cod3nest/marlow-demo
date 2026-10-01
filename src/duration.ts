@@ -7,13 +7,43 @@ const UNIT_MS = {
 
 type Unit = keyof typeof UNIT_MS;
 
+// Units ordered largest → smallest; used to enforce left-to-right ordering.
+const UNIT_ORDER: Unit[] = ["h", "m", "s", "ms"];
+
 export function parseDuration(input: string): number {
-  const match = /^(\d+)(ms|s|m|h)$/.exec(input.trim());
-  if (!match) {
+  const trimmed = input.trim();
+  if (!trimmed) {
     throw new Error(`Invalid duration: "${input}"`);
   }
-  const [, amount, unit] = match;
-  return Number(amount) * UNIT_MS[unit as Unit];
+
+  // Match a sequence of one or more <amount><unit> pairs that together consume
+  // the entire string.
+  const PAIR_RE = /(\d+)(ms|s|m|h)/g;
+  let total = 0;
+  let lastUnitIndex = -1;
+  let consumed = 0;
+
+  for (const match of trimmed.matchAll(PAIR_RE)) {
+    const amount = Number(match[1]);
+    const unit = match[2] as Unit;
+    const unitIndex = UNIT_ORDER.indexOf(unit);
+
+    // Units must appear in strictly decreasing order (no repeats, no out-of-order).
+    if (unitIndex <= lastUnitIndex) {
+      throw new Error(`Invalid duration: "${input}"`);
+    }
+
+    total += amount * UNIT_MS[unit];
+    lastUnitIndex = unitIndex;
+    consumed += match[0].length;
+  }
+
+  // Ensure we matched at least one pair and covered every character.
+  if (consumed === 0 || consumed !== trimmed.length) {
+    throw new Error(`Invalid duration: "${input}"`);
+  }
+
+  return total;
 }
 
 export function formatDuration(ms: number): string {
